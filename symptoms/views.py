@@ -12,6 +12,7 @@ from .ai_service import HealthInsightsAI
 from rest_framework.permissions import IsAuthenticated
 from django.http import HttpResponse
 from .reports import generate_health_report
+from rest_framework.permissions import IsAuthenticated, IsAdminUser
 
 class SymptomViewSet(viewsets.ModelViewSet):
     serializer_class = SymptomSerializer
@@ -143,4 +144,12 @@ def export_health_report(request):
     response['Content-Disposition']=f'attachment; filename="{filename}"'
     response['Content-Length']=len(pdf_bytes)
     return response
+
+
+@api_view(['POST'])
+@permission_classes([IsAdminUser])
+def trigger_weekly_digest(request):
+    from medications.tasks import send_weekly_digest
+    result = send_weekly_digest()
+    return Response({'result': result})
     
