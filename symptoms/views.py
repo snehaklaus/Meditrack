@@ -164,7 +164,19 @@ def test_email(request):
             from_email=settings.DEFAULT_FROM_EMAIL,
             to=['snaik0704@gmail.com'],
         )
-        email.send()
-        return Response({'result': 'Email sent successfully!'})
+        email.send(fail_silently=False)
+        return Response({
+            'result': 'Email sent successfully!',
+            'backend': settings.EMAIL_BACKEND,
+            'host': settings.EMAIL_HOST,
+            'port': settings.EMAIL_PORT,
+            'user': settings.EMAIL_HOST_USER,
+        })
     except Exception as e:
-        return Response({'error': str(e)}, status=500)
+        return Response({
+            'error': str(e),
+            'backend': settings.EMAIL_BACKEND,
+            'host': settings.EMAIL_HOST,
+            'port': settings.EMAIL_PORT,
+            'user': settings.EMAIL_HOST_USER,
+        }, status=500)
