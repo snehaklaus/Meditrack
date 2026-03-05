@@ -145,6 +145,12 @@ def export_health_report(request):
     response['Content-Length']=len(pdf_bytes)
     return response
 
+@api_view(['POST'])
+@permission_classes([IsAdminUser])
+def trigger_weekly_digest(request):
+    from medications.tasks import send_weekly_digest
+    send_weekly_digest.delay()  # ← runs in Celery worker, not in web request
+    return Response({'result': 'Weekly digest queued successfully'})
 
 @api_view(['POST'])
 @permission_classes([IsAdminUser])
