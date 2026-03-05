@@ -59,27 +59,115 @@ def send_reminder_notification(medication_id):
         medication = Medication.objects.get(id=medication_id)
         user = medication.user
 
-        subject = f"Medication Reminder: {medication.name}"
-        message = f"""
-Hi {user.username},
+        if not user.email:
+            return f"No email for {user.username}"
 
-This is a reminder to take your medication:
+        subject = f"💊 Time to take {medication.name}"
 
-Medication: {medication.name}
-Dosage: {medication.dosage}
+        freq_display = medication.frequency.replace('_', ' ').title()
 
-Stay healthy!
-- MediTrack
+        plain_message = (
+            f"Hi {user.username},\n\n"
+            f"This is a reminder to take your medication:\n\n"
+            f"Medication: {medication.name}\n"
+            f"Dosage: {medication.dosage}\n"
+            f"Frequency: {freq_display}\n\n"
+            f"Stay healthy!\n— MediTrack"
+        )
+
+        html_message = f"""
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"/></head>
+<body style="margin:0;padding:0;background:#F1F5F9;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#F1F5F9;padding:32px 0;">
+    <tr><td align="center">
+      <table width="520" cellpadding="0" cellspacing="0" style="max-width:520px;width:100%;">
+
+        <!-- Header -->
+        <tr>
+          <td style="background:linear-gradient(135deg,#2563EB,#0891B2);border-radius:12px 12px 0 0;padding:28px 36px;text-align:center;">
+            <h1 style="margin:0;color:#ffffff;font-size:22px;font-weight:700;">❤️ MediTrack</h1>
+            <p style="margin:6px 0 0;color:#BFDBFE;font-size:13px;">Medication Reminder</p>
+          </td>
+        </tr>
+
+        <!-- Body -->
+        <tr>
+          <td style="background:#ffffff;padding:28px 36px;">
+            <p style="margin:0 0 20px;color:#0F172A;font-size:15px;">
+              Hi <strong>{user.username}</strong>, time to take your medication!
+            </p>
+
+            <!-- Medication Card -->
+            <table width="100%" cellpadding="0" cellspacing="0"
+                   style="background:#EFF6FF;border-radius:10px;border:1px solid #BFDBFE;">
+              <tr>
+                <td style="padding:20px 24px;">
+                  <p style="margin:0 0 4px;font-size:11px;color:#2563EB;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">
+                    Medication
+                  </p>
+                  <p style="margin:0 0 16px;font-size:22px;font-weight:700;color:#0F172A;">
+                    💊 {medication.name}
+                  </p>
+                  <table width="100%" cellpadding="0" cellspacing="0">
+                    <tr>
+                      <td width="48%" style="background:#ffffff;border-radius:8px;padding:12px;border:1px solid #DBEAFE;">
+                        <p style="margin:0;font-size:11px;color:#94A3B8;">DOSAGE</p>
+                        <p style="margin:4px 0 0;font-size:15px;font-weight:600;color:#0F172A;">{medication.dosage}</p>
+                      </td>
+                      <td width="4%"></td>
+                      <td width="48%" style="background:#ffffff;border-radius:8px;padding:12px;border:1px solid #DBEAFE;">
+                        <p style="margin:0;font-size:11px;color:#94A3B8;">FREQUENCY</p>
+                        <p style="margin:4px 0 0;font-size:15px;font-weight:600;color:#0F172A;">{freq_display}</p>
+                      </td>
+                    </tr>
+                  </table>
+                  {f'<p style="margin:12px 0 0;font-size:13px;color:#475569;font-style:italic;">{medication.notes}</p>' if medication.notes else ''}
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- CTA -->
+        <tr>
+          <td style="background:#ffffff;padding:0 36px 28px;text-align:center;">
+            <a href="https://meditrack7.vercel.app"
+               style="display:inline-block;background:linear-gradient(135deg,#2563EB,#0891B2);
+                      color:#ffffff;text-decoration:none;font-weight:600;font-size:14px;
+                      padding:12px 28px;border-radius:8px;">
+              Open MediTrack →
+            </a>
+          </td>
+        </tr>
+
+        <!-- Footer -->
+        <tr>
+          <td style="background:#F8FAFC;border-top:1px solid #E2E8F0;border-radius:0 0 12px 12px;
+                     padding:16px 36px;text-align:center;">
+            <p style="margin:0;font-size:11px;color:#94A3B8;">
+              You're receiving this because you have an active medication reminder on MediTrack.
+            </p>
+          </td>
+        </tr>
+
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>
         """
 
-        if user.email:
-            send_mail(
-                subject,
-                message,
-                settings.DEFAULT_FROM_EMAIL,
-                [user.email],
-                fail_silently=True,
-            )
+        from django.core.mail import EmailMultiAlternatives
+        email = EmailMultiAlternatives(
+            subject=subject,
+            body=plain_message,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            to=[user.email],
+        )
+        email.attach_alternative(html_message, "text/html")
+        email.send(fail_silently=True)
 
         return f"Reminder sent to {user.username}"
 

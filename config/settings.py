@@ -236,19 +236,19 @@ if not DEBUG:
     SECURE_HSTS_PRELOAD=True
  
 # Unhash the below for local testing 
-#DATABASES = {
- #  'default': {
-  #      'ENGINE': 'django.db.backends.sqlite3',
-   #     'NAME': BASE_DIR / 'db.sqlite3',
-    #}
-#}
+DATABASES = {
+  'default': {
+      'ENGINE': 'django.db.backends.sqlite3',
+     'NAME': BASE_DIR / 'db.sqlite3',
+}
+}
 
 
 # Development: Using SQLite (switch to PostgreSQL for production) 
-DATABASES = {
-  'default': dj_database_url.config(
-  default=os.environ.get('DATABASE_URL'),
- conn_max_age=600,
-conn_health_checks=True,
-)
-}
+#DATABASES = {
+ # 'default': dj_database_url.config(
+  #default=os.environ.get('DATABASE_URL'),
+ #conn_max_age=600,
+#conn_health_checks=True,
+#)
+#}
