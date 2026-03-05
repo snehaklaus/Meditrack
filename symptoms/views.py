@@ -148,8 +148,17 @@ def export_health_report(request):
 
 @api_view(['POST'])
 @permission_classes([IsAdminUser])
-def trigger_weekly_digest(request):
-    from medications.tasks import send_weekly_digest
-    send_weekly_digest.delay()  # ← runs in Celery worker, not in web request
-    return Response({'result': 'Weekly digest queued successfully'})
-    
+def test_email(request):
+    from django.core.mail import EmailMultiAlternatives
+    from django.conf import settings
+    try:
+        email = EmailMultiAlternatives(
+            subject='MediTrack Test Email',
+            body='This is a test email from MediTrack.',
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            to=['snaik0704@gmail.com'],
+        )
+        email.send()
+        return Response({'result': 'Email sent successfully!'})
+    except Exception as e:
+        return Response({'error': str(e)}, status=500)
