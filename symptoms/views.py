@@ -150,6 +150,6 @@ def export_health_report(request):
 @permission_classes([IsAdminUser])
 def trigger_weekly_digest(request):
     from medications.tasks import send_weekly_digest
-    result = send_weekly_digest()
-    return Response({'result': result})
+    send_weekly_digest.delay()  # ← runs in Celery worker, not in web request
+    return Response({'result': 'Weekly digest queued successfully'})
     
