@@ -1,5 +1,5 @@
 from rest_framework import viewsets, filters
-from rest_framework.decorators import action
+from rest_framework.decorators import action, api_view,permission_classes
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Avg, Count, Max
@@ -10,6 +10,8 @@ from .serializers import SymptomSerializer, SymptomSummarySerializer,MoodLogSeri
 from accounts.permissions import IsOwnerOrDoctor
 from .ai_service import HealthInsightsAI
 from rest_framework.permissions import IsAuthenticated
+from django.http import HttpResponse
+from .reports import generate_health_report
 
 class SymptomViewSet(viewsets.ModelViewSet):
     serializer_class = SymptomSerializer
@@ -117,3 +119,28 @@ class MoodLogViewSet(viewsets.ModelViewSet):
                 "tension":0.1
             }]
         })
+    
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def export_health_report(request):
+    try:
+        days=int(request.query_params.get('days',30))
+        days=max(1,min(days,365))
+    except (TypeError,ValueError):
+        days=30
+
+    if request.user.role=='doctor':
+        from rest_framework.response import Response
+        from rest_framework import status
+        return Response(
+            {'error':'Doctor cannot export personal health reports.'},
+            status=status.HTTP_403_FORBIDDEN
+        )
+    pdf_bytes=generate_health_report(request.user,days=days)
+    filename=f'meditrack_report_{request.user.username}_{days}days.pdf'
+    response=HttpResponse(pdf_bytes,content_type='application/pdf')
+    response['Content-Disposition']=f'attachment; filename="{filename}"'
+    response['Content-Length']=len(pdf_bytes)
+    return response
+    

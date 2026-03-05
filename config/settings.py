@@ -88,11 +88,10 @@ TEMPLATES = [
 WSGI_APPLICATION = 'config.wsgi.application'
 
 from decouple import config
-# Database
-# https://docs.djangoproject.com/en/5.0/ref/settings/#databases
+
 import dj_database_url
 
-# Development: Using SQLite (switch to PostgreSQL for production)
+# Development: Using SQLite (switch to PostgreSQL for production) 
 DATABASES = {
    'default': dj_database_url.config(
     default=os.environ.get('DATABASE_URL'),
@@ -242,17 +241,12 @@ if not DEBUG:
     SECURE_HSTS_SECONDS=3153600
     SECURE_HSTS_INCLUDE_SUBDOMAINS=True
     SECURE_HSTS_PRELOAD=True
-    # Database — switches to Railway's PostgreSQL in production
-    # DATABASES['default'] = dj_database_url.config(
-   #     conn_max_age=600,
-   #     conn_health_checks=True,
-   # )
-
-    # Look for this in config/settings.py
+ 
+# Unhash the below for local testing 
 #DATABASES = {
-    #'default': {
-     #   'ENGINE': 'django.db.backends.sqlite3',
-      #  'NAME': BASE_DIR / 'db.sqlite3',
+ #   'default': {
+  #      'ENGINE': 'django.db.backends.sqlite3',
+   #     'NAME': BASE_DIR / 'db.sqlite3',
     #}
 #}
 
