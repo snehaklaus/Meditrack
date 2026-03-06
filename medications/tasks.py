@@ -23,6 +23,19 @@ from .models import Medication
 logger = logging.getLogger(__name__)
 
 
+import os
+import resend
+from celery import shared_task
+from django.conf import settings
+from django.utils.timezone import now
+from .models import Medication
+import logging
+
+logger = logging.getLogger(__name__)
+
+resend.api_key = os.getenv("RESEND_API_KEY")
+
+
 @shared_task
 def send_medication_reminders():
     logger.info("🚀 Medication reminder task started")
@@ -42,13 +55,23 @@ def send_medication_reminders():
 
             logger.info(f"📨 Attempting email to {email} for {med.name}")
 
-            send_mail(
-                subject="Medication Reminder",
-                message=f"Reminder to take {med.name} ({med.dosage})",
-                from_email=settings.DEFAULT_FROM_EMAIL,
-                recipient_list=[email],
-                fail_silently=False,
-            )
+            resend.Emails.send({
+                "from": "MediTrack <onboarding@resend.dev>",
+                "to": [email],
+                "subject": "Medication Reminder",
+                "html": f"""
+                <h2>Medication Reminder</h2>
+                <p>Hi {med.user.username},</p>
+
+                <p>This is a reminder to take:</p>
+
+                <b>{med.name}</b><br>
+                Dosage: {med.dosage}
+
+                <br><br>
+                Stay healthy! 💊
+                """
+            })
 
             logger.info(f"✅ Email sent to {email}")
 
