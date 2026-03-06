@@ -8,68 +8,34 @@ from datetime import time,date,timedelta
 from django.db.models import Avg,Count
 
 
+from celery import shared_task
+from django.core.mail import send_mail
+from django.utils import timezone
+from .models import Medication
+
+
 @shared_task
 def send_medication_reminders():
-    now = timezone.now()
-    current_hour = now.hour
-    current_time = now.time().replace(second=0, microsecond=0)
+    today = timezone.now().date()
 
-    medications = Medication.objects.filter(
-        is_active=True,
-        start_date__lte=now.date()
-    ).filter(
-        models.Q(end_date__isnull=True) | models.Q(end_date__gte=now.date())
-    ).select_related('user')
+    medications = Medication.objects.filter(start_date__lte=today)
 
-    reminders_sent = 0
+    count = 0
 
     for med in medications:
+        if med.user and med.user.email:
 
-        should_remind = False
+            send_mail(
+                subject=f"Medication Reminder: {med.name}",
+                message=f"Hi {med.user.username},\n\nTime to take your medication: {med.name}",
+                from_email="snehanaik0704@gmail.com",
+                recipient_list=[med.user.email],
+                fail_silently=False,
+            )
 
-        # Frequency rules
-        if med.frequency == 'once_daily': # and current_hour == 8:
-            should_remind = True
+            count += 1
 
-        elif med.frequency == 'twice_daily' and current_hour in [8, 20]:
-            should_remind = True
-
-        elif med.frequency == 'three_times_daily' and current_hour in [8, 14, 20]:
-            should_remind = True
-
-        elif med.frequency == 'custom' and med.custom_schedule:
-            for time_str in med.custom_schedule:
-                hour = int(time_str.split(':')[0])
-                if current_hour == hour:
-                    should_remind = True
-                    break
-
-        if not should_remind:
-            continue
-
-        # 🔥 Prevent duplicate reminders in same hour
-        already_sent = MedicationReminder.objects.filter(
-            medication=med,
-            sent_at__date=now.date(),
-            scheduled_time__hour=current_hour
-        ).exists()
-
-        if already_sent:
-            continue
-
-        # Send email
-        send_reminder_notification.delay(med.id)
-
-        # Save reminder log
-        MedicationReminder.objects.create(
-            medication=med,
-            scheduled_time=current_time
-        )
-
-        reminders_sent += 1
-
-    return f"Sent {reminders_sent} medication reminders"
-
+    return f"Sent {count} reminders"
 
 @shared_task
 def send_reminder_notification(medication_id):
