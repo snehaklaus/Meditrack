@@ -227,9 +227,9 @@ USE_TZ = True
 from celery.schedules import crontab
 
 CELERY_BEAT_SCHEDULE = {
-    'send-medication-reminders-every-minute': {
-        'task': 'medications.tasks.send_medication_reminders',
-        'schedule': crontab(minute='*'),  # every minute
+    "check-medication-reminders": {
+        "task": "medications.tasks.send_medication_reminders",
+        "schedule": 60.0,
     },
 }
 

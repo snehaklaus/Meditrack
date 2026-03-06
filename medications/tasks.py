@@ -12,7 +12,7 @@ from django.db.models import Avg,Count
 def send_medication_reminders():
     now = timezone.now()
     current_hour = now.hour
-    current_time = time(hour=current_hour)
+    current_time = now.time().replace(second=0, microsecond=0)
 
     medications = Medication.objects.filter(
         is_active=True,
@@ -24,14 +24,19 @@ def send_medication_reminders():
     reminders_sent = 0
 
     for med in medications:
+
         should_remind = False
 
-        if med.frequency == 'once_daily': # and current_hour == 8:  TEST MODE: remove current_hour =8  Always remind if active
+        # Frequency rules
+        if med.frequency == 'once_daily' and current_hour == 8:
             should_remind = True
+
         elif med.frequency == 'twice_daily' and current_hour in [8, 20]:
             should_remind = True
+
         elif med.frequency == 'three_times_daily' and current_hour in [8, 14, 20]:
             should_remind = True
+
         elif med.frequency == 'custom' and med.custom_schedule:
             for time_str in med.custom_schedule:
                 hour = int(time_str.split(':')[0])
@@ -39,16 +44,29 @@ def send_medication_reminders():
                     should_remind = True
                     break
 
-        if should_remind:
-            # 🔥 This is calling the second task
-            send_reminder_notification.delay(med.id)
+        if not should_remind:
+            continue
 
-            MedicationReminder.objects.create(
-                medication=med,
-                scheduled_time=current_time
-            )
+        # 🔥 Prevent duplicate reminders in same hour
+        already_sent = MedicationReminder.objects.filter(
+            medication=med,
+            sent_at__date=now.date(),
+            scheduled_time__hour=current_hour
+        ).exists()
 
-            reminders_sent += 1
+        if already_sent:
+            continue
+
+        # Send email
+        send_reminder_notification.delay(med.id)
+
+        # Save reminder log
+        MedicationReminder.objects.create(
+            medication=med,
+            scheduled_time=current_time
+        )
+
+        reminders_sent += 1
 
     return f"Sent {reminders_sent} medication reminders"
 
