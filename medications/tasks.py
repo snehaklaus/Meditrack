@@ -15,14 +15,12 @@ from .models import Medication
 #works locally on python shell
 @shared_task
 def send_medication_reminders():
-    today = timezone.now().date()
-
-    medications = Medication.objects.filter(start_date__lte=today)
+    medications = Medication.objects.filter(is_active=True)
 
     count = 0
 
     for med in medications:
-        if med.user and med.user.email:
+        if med.user.email:
 
             send_mail(
                 subject=f"Medication Reminder: {med.name}",
