@@ -13,6 +13,9 @@ from django.core.mail import send_mail
 from django.utils import timezone
 from .models import Medication
 #works locally on python shell
+from medications.models import Medication
+from django.core.mail import send_mail
+
 @shared_task
 def send_medication_reminders():
     medications = Medication.objects.filter(is_active=True)
@@ -21,15 +24,13 @@ def send_medication_reminders():
 
     for med in medications:
         if med.user.email:
-
             send_mail(
-                subject=f"Medication Reminder: {med.name}",
-                message=f"Hi {med.user.username},\n\nTime to take your medication: {med.name}",
-                from_email="snaik0704@gmail.com",
-                recipient_list=[med.user.email],
+                "Medication Reminder",
+                f"Reminder to take {med.name}",
+                "snaik0704@gmail.com",
+                [med.user.email],
                 fail_silently=False,
             )
-
             count += 1
 
     return f"Sent {count} reminders"
