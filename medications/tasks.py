@@ -27,7 +27,7 @@ def send_medication_reminders():
             send_mail(
                 subject=f"Medication Reminder: {med.name}",
                 message=f"Hi {med.user.username},\n\nTime to take your medication: {med.name}",
-                from_email="snehanaik0704@gmail.com",
+                from_email="snaik0704@gmail.com",
                 recipient_list=[med.user.email],
                 fail_silently=False,
             )
