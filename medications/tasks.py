@@ -470,3 +470,19 @@ def send_weekly_digest():
             emails_sent += 1
 
     return f"Weekly digest sent to {emails_sent} patients"
+
+from celery import shared_task
+from django.core.mail import send_mail
+from django.conf import settings
+
+@shared_task
+def test_email():
+    send_mail(
+        subject="MediTrack Email Test",
+        message="If you received this, email is working.",
+        from_email=settings.EMAIL_HOST_USER,
+        recipient_list=["snaik0704@gmail.com"],
+        fail_silently=False,
+    )
+
+    return "Email sent successfully"
