@@ -11,7 +11,7 @@ app.autodiscover_tasks()
 app.conf.beat_schedule = {
     'check-medication-reminders': {
         'task': 'medications.tasks.send_medication_reminders',
-        'schedule': 300.0,  # every 10 minutes (change to crontab(minute=0) after testing)
+        'schedule': 900.0,  # every 10 minutes (change to crontab(minute=0) after testing)
     },
     'send-weekly-digest-sunday-9am': {
         'task': 'medications.tasks.send_weekly_digest',
