@@ -2,9 +2,11 @@
 
 A production-ready REST API for managing medications, tracking symptoms, and getting AI-powered health insights with automated smart reminders and weekly health digest emails.
 
-**Live Demo:** meditrack.up.railway.app  
-**API Docs:** meditrack.up.railway.app/api/docs/  
-**Frontend:** meditrack7.vercel.app
+**API Docs:** [meditrack.up.railway.app/api/docs/ ](https://meditrack.up.railway.app/api/docs/) 
+<img width="1363" height="716" alt="image" src="https://github.com/user-attachments/assets/f2e25f81-18cf-4be5-adb9-e1f2c4cb4902" />
+
+**Frontend:** [meditrack7.vercel.app](https://meditrack7.vercel.app/)
+<img width="1282" height="717" alt="image" src="https://github.com/user-attachments/assets/1e323bb0-ffb2-44e5-98f5-3d6e74d818fc" />
 
 ---
 
