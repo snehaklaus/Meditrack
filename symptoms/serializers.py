@@ -38,3 +38,40 @@ class MoodLogSerializer(serializers.ModelSerializer):
           model=Moodlog
           fields='__all__'
           read_only_fields=['logged_at']
+
+class DoctorSymptomSerializer(serializers.ModelSerializer):
+     related_medication_names=serializers.SerializerMethodField()
+
+     class Meta:
+          model = Symptom
+          fields=[
+               'id',
+               'name',
+               'severity',
+               'notes',
+               'date',
+               'logged_at',
+               'related_medications',
+               'related_medication_names'
+          ]
+          read_only_fields=['id','logged_at']
+
+     def get_related_medication_names(self,obj):
+          return [med.name for med in obj.related_medications.all()]
+     
+
+class DoctorMoodlogSerializer(serializers.ModelSerializer):
+     mood_display=serializers.CharField(source='get_mood_display',read_only=True)
+
+     class Meta:
+          model=Moodlog
+          fields =[
+               'id',
+               'mood',
+               'mood_display',
+               'notes',
+               'date',
+               'logged_at'
+          ]
+
+          read_only_fields=['id','logged_at']

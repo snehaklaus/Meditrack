@@ -8,7 +8,8 @@ from google.oauth2 import id_token
 from google.auth.transport import requests as google_requests
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.conf import settings
-
+from django.db import IntegrityError
+import time
 from .serializers import (
     UserRegistrationSerializer, 
     UserSerializer, 
@@ -99,18 +100,34 @@ class AssignDoctorView(generics.UpdateAPIView):
     def get_object(self):
         return self.request.user
     
-from google.oauth2 import id_token
-from google.auth.transport import requests as google_requests
-from rest_framework_simplejwt.tokens import RefreshToken
-from django.conf import settings
-from django.db import IntegrityError
 
-from google.oauth2 import id_token
-from google.auth.transport import requests as google_requests
-from rest_framework_simplejwt.tokens import RefreshToken
-from django.conf import settings
-from django.db import IntegrityError
-import time
+# Doctor can view detailed information about a specific assigned patient
+class PatientDetailView(generics.RetrieveAPIView):
+    permission_classes=[IsDoctor]
+    serializer_class=PatientSerializer
+
+    def get_queryset(self):
+        return self.request.user.assigned_patients.all()
+    
+    def retrieve(self, request, *args, **kwargs):
+        patient=self.get_object()
+
+        from medications.serializers import MedicationSerializer
+        from symptoms.serializers import DoctorSymptomSerializer,DoctorMoodlogSerializer
+        patient_data=self.get_serializer(patient).data
+
+        medications=patient.medications.filter(is_active=True)
+        symptoms=patient.symptoms.all()[:20]
+        moods=patient.moods.all()[:30]
+
+        response_data={
+            'patient':patient_data,
+            'medications': MedicationSerializer(medications,many=True).data,
+            'recent_symptoms':DoctorSymptomSerializer(symptoms,many=True).data,
+            'mood_logs':DoctorMoodlogSerializer(moods,many=True).data,
+        }
+        return Response(response_data,status=status.HTTP_200_OK)
+
 
 # Google OAuth Login with clock skew tolerance
 class GoogleAuthView(generics.GenericAPIView):

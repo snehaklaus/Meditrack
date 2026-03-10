@@ -7,7 +7,8 @@ from .views import (
     AssignDoctorView, 
     LoginView,
     GoogleAuthView,
-    GoogleRegisterCompleteView
+    GoogleRegisterCompleteView,
+    PatientDetailView
 )
 from rest_framework.routers import DefaultRouter
 
@@ -20,6 +21,7 @@ urlpatterns = [
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('profile/', ProfileView.as_view(), name='profile'),
     path('assign-doctor/', AssignDoctorView.as_view(), name='assign_doctor'),
-    path('google/', GoogleAuthView.as_view(), name='google-auth'),  # ← NEW
-    path('google/complete/', GoogleRegisterCompleteView.as_view(), name='google-complete'),  # ← NEW
+    path('google/', GoogleAuthView.as_view(), name='google-auth'), 
+    path('google/complete/', GoogleRegisterCompleteView.as_view(), name='google-complete'),  
+    path('patients/<int:pk>/',PatientDetailView.as_view(),name='patient-detail'),
 ] + router.urls
