@@ -1,5 +1,6 @@
 # MediTrack API
 
+![Backend CI](https://github.com/sneh1117/MediTrack/actions/workflows/django-ci.yml/badge.svg)
 ![Python](https://img.shields.io/badge/Python-3.11-blue)
 ![Django](https://img.shields.io/badge/Django-4.2-green)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Database-blue)
