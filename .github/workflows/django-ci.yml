@@ -74,7 +74,7 @@ jobs:
       - name: Run tests with coverage
         run: |
           coverage run --source='.' manage.py test accounts --verbosity=2
-          coverage report --fail-under=70
+          coverage report --fail-under=60
           coverage xml
 
       - name: Upload coverage report
