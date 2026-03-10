@@ -25,6 +25,7 @@ A production-ready REST API for managing medications, tracking symptoms, and get
 **Authentication & Access**
 - JWT Authentication — Secure token-based auth with access & refresh tokens
 - Google OAuth 2.0 Integration — One-click sign-in/sign-up with Google accounts
+- **Editable User Profiles** — Users can update username, email, phone, and date of birth with validation
 - Role-Based Access Control — Separate Patient and Doctor roles with distinct permissions
 - Doctor-Patient Relationships — Doctors can be assigned to patients and view their data
 
@@ -47,6 +48,7 @@ A production-ready REST API for managing medications, tracking symptoms, and get
 **Security & Quality**
 - Rate Limiting — Brute-force protection on auth endpoints
 - Input Sanitization — XSS prevention via HTML tag validation on all user inputs
+- **Profile Update Validation** — Username/email uniqueness checks, phone format validation, date of birth logic
 - OAuth Token Verification — Server-side Google token validation with clock skew tolerance
 - Auto-Generated API Docs — Swagger UI powered by drf-spectacular
 
@@ -205,7 +207,7 @@ CORS_ORIGINS=http://localhost:3000,http://localhost:5173
 | POST | `/api/auth/google/` | **Google OAuth login/signup** | No |
 | POST | `/api/auth/google/complete/` | **Complete Google OAuth registration** | No |
 | POST | `/api/auth/token/refresh/` | Refresh access token | No |
-| GET/PUT/PATCH | `/api/auth/profile/` | View or update your profile (includes email_digest_enabled) | Yes |
+| GET/PUT/PATCH | `/api/auth/profile/` | **View or update your profile** (includes email_digest_enabled) | Yes |
 | GET | `/api/auth/patients/` | List assigned patients (doctors only) | Yes |
 | PUT | `/api/auth/assign-doctor/` | Assign a doctor to your account (patients only) | Yes |
 
@@ -265,6 +267,118 @@ Response:
   "is_new_user": false
 }
 ```
+
+---
+
+## ⚙️ Editable User Profile
+
+The `/api/auth/profile/` endpoint now supports full profile updates with comprehensive validation.
+
+### PATCH `/api/auth/profile/`
+
+**Request Body:**
+```json
+{
+  "username": "new_username",
+  "email": "new@email.com",
+  "phone": "+1 555-123-4567",
+  "date_of_birth": "1990-01-15",
+  "email_digest_enabled": true
+}
+```
+
+**Success Response (200):**
+```json
+{
+  "id": 1,
+  "username": "new_username",
+  "email": "new@email.com",
+  "role": "patient",
+  "phone": "+1 555-123-4567",
+  "date_of_birth": "1990-01-15",
+  "email_digest_enabled": true
+}
+```
+
+**Validation Error Response (400):**
+```json
+{
+  "username": ["Username already taken"],
+  "email": ["Email already taken"],
+  "phone": ["Phone number should contain only digits, spaces, and +()-"],
+  "date_of_birth": ["Date of birth cannot be in the future"]
+}
+```
+
+### Validation Rules
+
+The `UserSerializer` implements the following validations:
+
+| Field | Validation |
+|-------|-----------|
+| **username** | Required, must be unique (excluding current user) |
+| **email** | Required, valid email format, must be unique (excluding current user) |
+| **phone** | Optional, 7-15 digits, allows spaces and +()- characters |
+| **date_of_birth** | Optional, must be in the past, maximum 150 years ago |
+| **role** | Read-only field (cannot be changed after registration) |
+| **email_digest_enabled** | Boolean toggle for weekly email digest |
+
+### Serializer Implementation
+
+```python
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'email', 'role', 'phone', 'date_of_birth', 'email_digest_enabled']
+        read_only_fields = ['id', 'role']
+    
+    def validate_username(self, value):
+        """Ensure username is unique when updating"""
+        user = self.instance
+        if user and User.objects.filter(username=value).exclude(pk=user.pk).exists():
+            raise serializers.ValidationError('Username already taken')
+        return value
+    
+    def validate_email(self, value):
+        """Ensure email is unique when updating"""
+        user = self.instance
+        if user and User.objects.filter(email=value).exclude(pk=user.pk).exists():
+            raise serializers.ValidationError('Email already taken')
+        return value
+    
+    def validate_phone(self, value):
+        """Basic phone validation"""
+        if value and len(value.strip()) > 0:
+            cleaned = value.replace(' ', '').replace('-', '').replace('(', '').replace(')', '').replace('+', '')
+            if not cleaned.isdigit():
+                raise serializers.ValidationError('Phone number should contain only digits, spaces, and +()-')
+            if len(cleaned) < 7 or len(cleaned) > 15:
+                raise serializers.ValidationError('Phone number should be between 7 and 15 digits')
+        return value
+    
+    def validate_date_of_birth(self, value):
+        """Ensure date of birth is valid"""
+        if value:
+            from datetime import date
+            today = date.today()
+            if value > today:
+                raise serializers.ValidationError('Date of birth cannot be in the future')
+            age = today.year - value.year - ((today.month, today.day) < (value.month, value.day))
+            if age > 150:
+                raise serializers.ValidationError('Invalid date of birth')
+        return value
+```
+
+### Security Features
+
+- **Object-Level Permissions:** Users can only edit their own profile (enforced by `get_object()` in view)
+- **Role Protection:** User role is read-only and cannot be changed after registration
+- **Unique Constraints:** Username and email uniqueness checked at database level
+- **Input Validation:** Both serializer-level and database-level validation
+- **SQL Injection Prevention:** Django ORM protects against SQL injection
+- **XSS Prevention:** HTML tags stripped from text inputs
+
+---
 
 ### Medications (`/api/medications/`)
 
@@ -360,6 +474,11 @@ Patients can toggle this on/off from their profile settings.
 - JWT authentication with configurable token lifetimes (1hr access, 7 day refresh)
 - **Google OAuth 2.0** with server-side token verification and clock skew tolerance
 - **OAuth users** have unusable passwords (cannot login with traditional credentials)
+- **Profile update security:**
+  - Users can only edit their own profile
+  - Role field is read-only
+  - Username/email uniqueness enforced
+  - Input validation on all fields
 - Role-based permissions — patients and doctors only access appropriate data
 - Object-level permissions — users can only access their own records
 - Rate limiting — registration capped at 5/hour, login at 10/hour per IP
@@ -458,7 +577,7 @@ python manage.py test
 ```
 meditrack/
 ├── config/               # Django project settings, URLs, Celery config
-├── accounts/             # Custom user model, auth, Google OAuth, doctor-patient permissions
+├── accounts/             # Custom user model, auth, Google OAuth, profile updates, doctor-patient permissions
 ├── medications/          # Medication CRUD, reminders, adherence tracking
 ├── symptoms/             # Symptom logging, AI insights, dashboard, mood tracking, PDF reports
 ├── core/                 # Shared validators and middleware
@@ -488,6 +607,27 @@ meditrack/
 - Wait 5-10 minutes for Google's changes to propagate
 - Check CORS settings include frontend URL
 
+**Profile Update Errors:**
+
+**"Username already taken"**
+- Username uniqueness is checked excluding the current user
+- Another user has this username
+- Try a different username
+
+**"Email already taken"**
+- Email uniqueness is checked excluding the current user
+- This email is already registered to another account
+- Use a different email address
+
+**"Phone number validation error"**
+- Phone should be 7-15 digits
+- Allowed characters: digits, spaces, +, (, ), -
+- Example valid format: `+1 555-123-4567`
+
+**"Date of birth cannot be in the future"**
+- Ensure the date is in the past
+- Check date format is correct (YYYY-MM-DD)
+
 **Email not working:**
 - For Gmail, use an **App Password**, not your regular password
 - In Railway, ensure all email env vars are set correctly
@@ -503,6 +643,10 @@ meditrack/
 - [ ] Unit tests and CI/CD pipeline
 - [ ] Doctor dashboard with patient management UI
 - [ ] OAuth support for additional providers (Apple, Facebook)
+- [ ] Two-factor authentication
+- [ ] Audit logging for profile changes
+- [x] **Editable user profiles with validation**
+- [x] **Dark mode support in frontend**
 - [x] Google OAuth 2.0 integration
 - [x] PDF export for health reports
 - [x] HTML email templates for reminders and digests
@@ -525,6 +669,39 @@ GitHub: [sneh1117](https://github.com/sneh1117)
 
 ---
 
+## 📋 Changelog
+
+### Version 2.2 (Latest)
+- **Editable User Profiles**
+  - Users can update username, email, phone, date of birth
+  - Comprehensive validation with specific error messages
+  - Username uniqueness check (excluding current user)
+  - Email uniqueness check (excluding current user)
+  - Phone format validation (7-15 digits, +()- allowed)
+  - Date of birth validation (must be in past, max 150 years old)
+  - Role field protected as read-only
+  - Email digest toggle support
+- **Enhanced Security**
+  - Object-level permissions for profile updates
+  - Input validation on all editable fields
+  - SQL injection and XSS protection
+
+### Version 2.1
+- Google OAuth 2.0 integration with server-side token verification
+- Clock skew tolerance for OAuth tokens
+- Separate registration completion endpoint for new Google users
+
+### Version 2.0
+- Weekly email digest with toggle preference
+- PDF health report export
+- Medication adherence tracking
+- Interactive dashboard charts
+
+### Version 1.0
+- Initial release with medications, symptoms, AI insights
+
+---
+
 ## 🎯 Google OAuth Implementation Details
 
 **Technical Flow:**
@@ -542,3 +719,26 @@ GitHub: [sneh1117](https://github.com/sneh1117)
 - Email uniqueness enforced at database level
 - CORS properly configured for OAuth popup flow
 - Cross-Origin-Opener-Policy set to allow popup communication
+
+---
+
+## 🔐 Profile Update Implementation Details
+
+**Validation Flow:**
+1. Frontend sends PATCH request to `/api/auth/profile/`
+2. DRF validates request data format
+3. `UserSerializer` runs field-level validators
+4. Uniqueness checks exclude current user's ID
+5. All validations pass → database update
+6. Updated user object returned to frontend
+
+**Database Level:**
+- `username` and `email` have unique constraints
+- Database will reject duplicates even if validation is bypassed
+- Foreign key constraint on `assigned_doctor`
+
+**Frontend Integration:**
+- Real-time validation feedback
+- Inline error messages
+- Success toast on update
+- Automatic form reset on cancel
