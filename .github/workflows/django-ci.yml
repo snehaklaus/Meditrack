@@ -73,7 +73,7 @@ jobs:
 
       - name: Run tests with coverage
         run: |
-          coverage run --source='.' manage.py test accounts --verbosity=2
+          coverage run --source='accounts,medications,symptoms,core' manage.py test accounts medications symptoms --verbosity=2
           coverage report --fail-under=60
           coverage xml
 
