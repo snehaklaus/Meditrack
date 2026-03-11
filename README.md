@@ -1,5 +1,6 @@
 # MediTrack API
 
+![Backend CI](https://github.com/sneh1117/MediTrack/actions/workflows/django-ci.yml/badge.svg)
 ![Python](https://img.shields.io/badge/Python-3.11-blue)
 ![Django](https://img.shields.io/badge/Django-4.2-green)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Database-blue)
@@ -636,15 +637,14 @@ meditrack/
 ---
 
 ## 🔮 Roadmap
-
 - [ ] WebSocket support for real-time push notifications (Django Channels)
 - [ ] Medication interaction checker via Gemini AI
 - [ ] Predictive analytics and trend forecasting
-- [ ] Unit tests and CI/CD pipeline
-- [ ] Doctor dashboard with patient management UI
 - [ ] OAuth support for additional providers (Apple, Facebook)
 - [ ] Two-factor authentication
 - [ ] Audit logging for profile changes
+- [x] **Unit tests and CI/CD pipeline**
+- [x] **Doctor dashboard with patient management UI**
 - [x] **Editable user profiles with validation**
 - [x] **Dark mode support in frontend**
 - [x] Google OAuth 2.0 integration
@@ -671,7 +671,19 @@ GitHub: [sneh1117](https://github.com/sneh1117)
 
 ## 📋 Changelog
 
-### Version 2.2 (Latest)
+### Version 2.3 (Latest)
+- **Unit Tests & CI/CD Pipeline**
+  - 42 automated unit tests covering models, serializers, and API endpoints
+  - GitHub Actions CI pipeline running on every push
+  - 62% code coverage across accounts app
+  - Doctor/patient flow and permission tests
+- **Doctor Dashboard**
+  - Patient list with search functionality
+  - View patient medications, symptoms, and mood logs
+  - Sort symptoms by date or severity
+  - Read-only access to patient data
+
+### Version 2.2
 - **Editable User Profiles**
   - Users can update username, email, phone, date of birth
   - Comprehensive validation with specific error messages
