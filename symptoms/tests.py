@@ -314,13 +314,13 @@ class SymptomViewSetTest(APITestCase):
         self._auth(self.patient)
         response = self.client.get(self.list_url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data["results"]), 1)
+        self.assertEqual(len(response.data), 1)
 
     def test_patient_cannot_see_other_patient_symptoms(self):
         make_symptom(self.other_patient, name="Other Symptom")
         self._auth(self.patient)
         response = self.client.get(self.list_url)
-        names = [s["name"] for s in response.data["results"]]
+        names = [s["name"] for s in response.data]
         self.assertNotIn("Other Symptom", names)
 
     def test_patient_can_create_symptom(self):
@@ -357,13 +357,13 @@ class SymptomViewSetTest(APITestCase):
         self._auth(self.doctor)
         response = self.client.get(self.list_url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data["results"]), 1)
+        self.assertEqual(len(response.data), 1)
 
     def test_doctor_cannot_see_unassigned_patient_symptoms(self):
         make_symptom(self.other_patient, name="Unassigned")
         self._auth(self.doctor)
         response = self.client.get(self.list_url)
-        names = [s["name"] for s in response.data["results"]]
+        names = [s["name"] for s in response.data]
         self.assertNotIn("Unassigned", names)
 
     # --- Filtering ---
@@ -372,14 +372,14 @@ class SymptomViewSetTest(APITestCase):
         make_symptom(self.patient, name="Mild", severity=2)
         self._auth(self.patient)
         response = self.client.get(self.list_url + "?severity=2")
-        for s in response.data["results"]:
+        for s in response.data:
             self.assertEqual(s["severity"], 2)
 
     def test_search_by_name(self):
         make_symptom(self.patient, name="Dizziness")
         self._auth(self.patient)
         response = self.client.get(self.list_url + "?search=Dizziness")
-        names = [s["name"] for s in response.data["results"]]
+        names = [s["name"] for s in response.data]
         self.assertIn("Dizziness", names)
 
     def test_ordering_by_severity(self):
@@ -387,7 +387,7 @@ class SymptomViewSetTest(APITestCase):
         make_symptom(self.patient, severity=9)
         self._auth(self.patient)
         response = self.client.get(self.list_url + "?ordering=severity")
-        severities = [s["severity"] for s in response.data["results"]]
+        severities = [s["severity"] for s in response.data]
         self.assertEqual(severities, sorted(severities))
 
     # --- Custom Actions ---
@@ -507,7 +507,7 @@ class MoodLogViewSetTest(APITestCase):
         make_moodlog(self.other_patient)
         self._auth(self.patient)
         response = self.client.get(self.list_url)
-        self.assertEqual(len(response.data["results"]), 0)
+        self.assertEqual(len(response.data), 0)
 
     def test_patient_can_create_mood(self):
         self._auth(self.patient)

@@ -259,13 +259,13 @@ class MedicationViewSetTest(APITestCase):
         self._auth(self.patient)
         response = self.client.get(self.list_url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data["results"]), 1)
+        self.assertEqual(len(response.data), 1)
 
     def test_patient_cannot_see_other_patient_medications(self):
         make_medication(self.other_patient, name="Other Med")
         self._auth(self.patient)
         response = self.client.get(self.list_url)
-        names = [m["name"] for m in response.data["results"]]
+        names = [m["name"] for m in response.data]
         self.assertNotIn("Other Med", names)
 
     def test_patient_can_create_medication(self):
@@ -308,13 +308,13 @@ class MedicationViewSetTest(APITestCase):
         self._auth(self.doctor)
         response = self.client.get(self.list_url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data["results"]), 1)
+        self.assertEqual(len(response.data), 1)
 
     def test_doctor_cannot_see_unassigned_patient_medications(self):
         make_medication(self.other_patient, name="Unassigned Med")
         self._auth(self.doctor)
         response = self.client.get(self.list_url)
-        names = [m["name"] for m in response.data["results"]]
+        names = [m["name"] for m in response.data]
         self.assertNotIn("Unassigned Med", names)
 
     # --- Filtering & Search ---
@@ -324,21 +324,21 @@ class MedicationViewSetTest(APITestCase):
         self._auth(self.patient)
         response = self.client.get(self.list_url + "?is_active=true")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        for med in response.data["results"]:
+        for med in response.data:
             self.assertTrue(med["is_active"])
 
     def test_filter_by_frequency(self):
         make_medication(self.patient, name="Twice Med", frequency="twice_daily")
         self._auth(self.patient)
         response = self.client.get(self.list_url + "?frequency=twice_daily")
-        for med in response.data["results"]:
+        for med in response.data:
             self.assertEqual(med["frequency"], "twice_daily")
 
     def test_search_by_name(self):
         make_medication(self.patient, name="Metformin")
         self._auth(self.patient)
         response = self.client.get(self.list_url + "?search=Metformin")
-        names = [m["name"] for m in response.data["results"]]
+        names = [m["name"] for m in response.data]
         self.assertIn("Metformin", names)
 
     # --- Custom Actions ---
@@ -440,5 +440,5 @@ class MedicationViewSetTest(APITestCase):
         make_medication(self.patient, name="Advil")
         self._auth(self.patient)
         response = self.client.get(self.list_url + "?ordering=name")
-        names = [m["name"] for m in response.data["results"]]
+        names = [m["name"] for m in response.data]
         self.assertEqual(names, sorted(names))
