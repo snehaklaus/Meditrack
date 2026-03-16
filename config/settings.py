@@ -60,6 +60,7 @@ INSTALLED_APPS = [
     'medications',
     'django_filters',
     'symptoms',
+    'fhir_integration',
     
 ]
 
@@ -209,6 +210,8 @@ CACHES = {
     }
 }
 
+
+
 #for testing ai insights without using api tokens
 
 USE_MOCK_AI = config('USE_MOCK_AI', default=False, cast=bool)
@@ -246,9 +249,9 @@ if not DEBUG:
  
 # Unhash the below for local testing 
 #DATABASES = {
-  #'default': {
-   #   'ENGINE': 'django.db.backends.sqlite3',
-  #    'NAME': BASE_DIR / 'db.sqlite3',
+ # 'default': {
+  #    'ENGINE': 'django.db.backends.sqlite3',
+   #   'NAME': BASE_DIR / 'db.sqlite3',
  #}
  #}
 
@@ -269,3 +272,32 @@ GOOGLE_OAUTH_CLIENT_SECRET=config('GOOGLE_CLIENT_SECRET',default='')
 
 # Google OAuth - Cross-Origin Policy
 SECURE_CROSS_ORIGIN_OPENER_POLICY = None
+
+
+FHIR_CONFIG={
+    'R4_BASE_URL':'https://meditrack.up.railway.app/fhir/r4/',  #for local testing
+    'ORGANIZATION_NAME':'MediTrack',
+    'ENABLE_SMART_ON_FHIR':True, 
+}
+
+LOGGING={
+    'version':1,
+    'disable_existing_loggers':False,
+    'handlers':{
+        'console':{
+            'class':'logging.StreamHandler',
+        },
+        'fhir_file':{
+            'level':'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename':'fhir.log', 
+        },
+    },
+    'loggers':{
+        'fhir_integration':{
+            'handlers':['console','fhir_file'],
+            'level':'DEBUG',
+            'propagate':False,
+        },
+    },
+}
