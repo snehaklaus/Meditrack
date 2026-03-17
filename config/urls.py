@@ -8,6 +8,9 @@ urlpatterns = [
     path('api/medications/', include('medications.urls')),
     path('api/', include('symptoms.urls')),  # Includes dashboard, symptoms and moods
     path('fhir/', include('fhir_integration.urls')),
+    path('api/analytics/', include('visitor_tracking.urls')),
+
+
     #API Documentation
     path('api/schema/',SpectacularAPIView.as_view(),name='schema'),
     path('api/docs/',SpectacularSwaggerView.as_view(url_name='schema'),name='swagger-ui'),

@@ -61,6 +61,7 @@ INSTALLED_APPS = [
     'django_filters',
     'symptoms',
     'fhir_integration',
+    'visitor_tracking',
     
 ]
 
@@ -74,6 +75,9 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    # Visitor tracking 
+    'visitor_tracking.middleware.VisitorTrackingMiddleware',
+    'visitor_tracking.middleware.BotDetectionMiddleware',
     
     
 ]
@@ -249,18 +253,17 @@ if not DEBUG:
  
 # Unhash the below for local testing 
 #DATABASES = {
- # 'default': {
-  #    'ENGINE': 'django.db.backends.sqlite3',
-   #   'NAME': BASE_DIR / 'db.sqlite3',
+ #     'ENGINE': 'django.db.backends.sqlite3',
+  #    'NAME': BASE_DIR / 'db.sqlite3',
  #}
  #}
 
 
 # Development: Using SQLite (switch to PostgreSQL for production) 
 DATABASES = {
-  'default': dj_database_url.config(
+ 'default': dj_database_url.config(
   default=os.environ.get('DATABASE_URL'),
- conn_max_age=600,
+conn_max_age=600,
 conn_health_checks=True,
 )
 }
@@ -279,6 +282,13 @@ FHIR_CONFIG={
     'ORGANIZATION_NAME':'MediTrack',
     'ENABLE_SMART_ON_FHIR':True, 
 }
+
+
+
+ENABLE_VISITOR_TRACKING = True
+ADMIN_IPS = '1110.226.183.226'  # Add your IPs
+ADMIN_EMAIL = 'admin@example.com'
+
 
 LOGGING={
     'version':1,
