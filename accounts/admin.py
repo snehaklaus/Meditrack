@@ -3,29 +3,6 @@ from django.contrib.auth.admin import UserAdmin
 from .models import User
 
 
-# One-time superuser creation
-def create_initial_superuser():
-    """Creates initial superuser if it doesn't exist"""
-    try:
-        if not User.objects.filter(username='admin').exists():
-            user = User.objects.create_superuser(
-                username='admin',
-                email='sneha.naik1117@gmail.com',
-                password='Admin123!@#'  # CHANGE THIS PASSWORD!
-            )
-            # Set role if required
-            if hasattr(user, 'role'):
-                user.role = 'patient'  # or leave blank if optional
-                user.save()
-            print('✅ Superuser "admin" created successfully!')
-        else:
-            print('ℹ️ Superuser "admin" already exists')
-    except Exception as e:
-        print(f'❌ Error creating superuser: {e}')
-
-
-# Call it once when admin module loads
-create_initial_superuser()
 
 
 @admin.register(User)
