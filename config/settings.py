@@ -187,7 +187,7 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
     "https://meditrack7.vercel.app",
-    'https://meditrack.up.railway.app',
+    'https://meditrack7.up.railway.app',
     'https://meditrack1.up.railway.app',
 ]
 
