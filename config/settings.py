@@ -314,3 +314,6 @@ LOGGING={
         },
     },
 }
+
+BREVO_API_KEY = config("BREVO_API_KEY")
+DEFAULT_FROM_EMAIL = config("BREVO_EMAIL")
