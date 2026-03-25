@@ -8,12 +8,14 @@ from .views import (
     LoginView,
     GoogleAuthView,
     GoogleRegisterCompleteView,
-    PatientDetailView
+    PatientDetailView,
+    ForgotPasswordView,
+    ResetPasswordView,
 )
 from rest_framework.routers import DefaultRouter
 
-router =DefaultRouter()
-router.register(r'patients',PatientViewSet,basename='patients')
+router = DefaultRouter()
+router.register(r'patients', PatientViewSet, basename='patients')
 
 urlpatterns = [
     path('register/', RegisterView.as_view(), name='register'),
@@ -23,5 +25,7 @@ urlpatterns = [
     path('assign-doctor/', AssignDoctorView.as_view(), name='assign_doctor'),
     path('google/', GoogleAuthView.as_view(), name='google-auth'), 
     path('google/complete/', GoogleRegisterCompleteView.as_view(), name='google-complete'),  
-    path('patients/<int:pk>/',PatientDetailView.as_view(),name='patient-detail'),
+    path('patients/<int:pk>/', PatientDetailView.as_view(), name='patient-detail'),
+    path('forgot-password/', ForgotPasswordView.as_view(), name='forgot-password'),
+    path('reset-password/', ResetPasswordView.as_view(), name='reset-password'),
 ] + router.urls

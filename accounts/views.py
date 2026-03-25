@@ -9,14 +9,17 @@ from google.auth.transport import requests as google_requests
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.conf import settings
 from django.db import IntegrityError
+from django.core.mail import send_mail
+from django.utils import timezone
 import time
+import secrets
 from .serializers import (
     UserRegistrationSerializer, 
     UserSerializer, 
     PatientSerializer, 
     DoctorPatientsSerializer
 )
-from .models import User
+from .models import User, PasswordResetToken
 from .permissions import IsDoctor, IsPatient
 
 
@@ -235,3 +238,139 @@ class GoogleRegisterCompleteView(generics.GenericAPIView):
             return Response({'error': 'User creation failed. Please try again.'}, status=400)
         except Exception as e:
             return Response({'error': f'Registration failed: {str(e)}'}, status=500)
+
+
+# ⭐ Forgot Password - accepts email, sends reset link
+@method_decorator(ratelimit(key='ip', rate='5/h', method='POST'), name='dispatch')
+class ForgotPasswordView(generics.GenericAPIView):
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        email = request.data.get('email', '').strip().lower()
+
+        if not email:
+            return Response({'error': 'Email is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Always return the same response to prevent email enumeration
+        success_response = Response(
+            {'message': 'If an account with that email exists, a password reset link has been sent.'},
+            status=status.HTTP_200_OK
+        )
+
+        user = User.objects.filter(email__iexact=email).first()
+        if not user:
+            # Don't reveal that the email doesn't exist
+            return success_response
+
+        # Invalidate any existing unused tokens for this user
+        PasswordResetToken.objects.filter(user=user, used=False).update(used=True)
+
+        # Create a new reset token
+        reset_token = PasswordResetToken.objects.create(user=user)
+
+        # Build reset URL — points to the frontend
+        frontend_url = getattr(settings, 'FRONTEND_URL', 'https://meditrack7.vercel.app')
+        reset_url = f"{frontend_url}?reset_token={reset_token.token}"
+
+        # Send email using existing Gmail SMTP config
+        try:
+            send_mail(
+                subject='Reset Your MediTrack Password',
+                message=(
+                    f"Hi {user.username},\n\n"
+                    f"You requested a password reset for your MediTrack account.\n\n"
+                    f"Click the link below to set a new password. This link expires in 1 hour.\n\n"
+                    f"{reset_url}\n\n"
+                    f"If you did not request this, you can safely ignore this email.\n\n"
+                    f"— The MediTrack Team"
+                ),
+                html_message=f"""
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+                    <div style="background: linear-gradient(135deg, #2563eb, #0891b2); padding: 24px; border-radius: 12px 12px 0 0; text-align: center;">
+                        <h1 style="color: white; margin: 0; font-size: 24px;">🔒 MediTrack</h1>
+                        <p style="color: rgba(255,255,255,0.85); margin: 8px 0 0; font-size: 14px;">Password Reset Request</p>
+                    </div>
+                    <div style="background: #ffffff; border: 1px solid #e2e8f0; border-top: none; padding: 32px; border-radius: 0 0 12px 12px;">
+                        <p style="color: #334155; font-size: 16px;">Hi <strong>{user.username}</strong>,</p>
+                        <p style="color: #64748b; font-size: 15px; line-height: 1.6;">
+                            We received a request to reset your MediTrack password.
+                            Click the button below to choose a new password. This link expires in <strong>1 hour</strong>.
+                        </p>
+                        <div style="text-align: center; margin: 32px 0;">
+                            <a href="{reset_url}"
+                               style="background: linear-gradient(135deg, #2563eb, #0891b2); color: white;
+                                      padding: 14px 32px; border-radius: 8px; text-decoration: none;
+                                      font-weight: 600; font-size: 16px; display: inline-block;">
+                                Reset My Password →
+                            </a>
+                        </div>
+                        <p style="color: #94a3b8; font-size: 13px; margin-top: 24px; border-top: 1px solid #f1f5f9; padding-top: 16px;">
+                            If you didn't request this, you can safely ignore this email.
+                            Your password will not change unless you click the link above.
+                        </p>
+                    </div>
+                </div>
+                """,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[user.email],
+                fail_silently=False,
+            )
+        except Exception as e:
+            print(f"❌ Failed to send password reset email: {str(e)}")
+            # Still return success to avoid email enumeration, but log the error
+            return success_response
+
+        return success_response
+
+
+# ⭐ Reset Password - validates token and sets new password
+class ResetPasswordView(generics.GenericAPIView):
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        token_str = request.data.get('token', '').strip()
+        new_password = request.data.get('password', '')
+        confirm_password = request.data.get('confirm_password', '')
+
+        # Validate inputs
+        if not token_str:
+            return Response({'error': 'Reset token is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not new_password:
+            return Response({'error': 'New password is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if len(new_password) < 8:
+            return Response({'error': 'Password must be at least 8 characters'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if new_password != confirm_password:
+            return Response({'error': 'Passwords do not match'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Look up token
+        try:
+            reset_token = PasswordResetToken.objects.select_related('user').get(token=token_str)
+        except PasswordResetToken.DoesNotExist:
+            return Response({'error': 'Invalid or expired reset link. Please request a new one.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Check validity
+        if not reset_token.is_valid:
+            return Response(
+                {'error': 'This reset link has expired or already been used. Please request a new one.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Set new password
+        user = reset_token.user
+        user.set_password(new_password)
+        user.save()
+
+        # Mark token as used
+        reset_token.used = True
+        reset_token.save()
+
+        # Invalidate any other pending tokens for this user
+        PasswordResetToken.objects.filter(user=user, used=False).update(used=True)
+
+        return Response(
+            {'message': 'Password reset successfully. You can now log in with your new password.'},
+            status=status.HTTP_200_OK
+        )

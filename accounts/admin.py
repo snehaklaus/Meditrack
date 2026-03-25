@@ -4,7 +4,6 @@ from .models import User
 
 
 
-
 @admin.register(User)
 class CustomUserAdmin(UserAdmin):
     list_display = ['username', 'email', 'role', 'assigned_doctor', 'is_staff']
