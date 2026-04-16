@@ -14,13 +14,33 @@
 [![Live Demo](https://img.shields.io/badge/Live-Demo-success)](https://meditrack7.vercel.app)
 [![API Docs](https://img.shields.io/badge/API-Docs-blue)](https://meditrack.up.railway.app/api/docs/)
 
-A production-ready REST API for managing medications, tracking symptoms, getting AI-powered health insights with automated smart reminders and weekly health digest emails, **plus real-time visitor analytics with country detection**.
+## 🚀 Try MediTrack Instantly (No Signup Required)
+
+👉 **Live Demo:** https://meditrack7.vercel.app  
+
+You can explore the app using **Trial Mode** — no account needed.
+
+✔️ Add medications  
+✔️ Log symptoms & mood  
+✔️ View dashboard & insights  
+
+> Built to let anyone experience the product instantly without friction.
+
+---
+
+## 🎯 What is MediTrack?
+
+MediTrack is a full-stack health management platform that helps users track medications, monitor symptoms, and gain AI-powered health insights — all in one place.
+
+A production-ready full-stack health platform with a powerful REST API for managing medications, tracking symptoms, and generating AI-powered insights, **plus real-time visitor analytics with country detection**.
 
 **API Docs:** [meditrack.up.railway.app/api/docs/](https://meditrack.up.railway.app/api/docs/) 
 <img width="1363" height="716" alt="image" src="https://github.com/user-attachments/assets/f2e25f81-18cf-4be5-adb9-e1f2c4cb4902" />
 
 **Frontend:** [meditrack7.vercel.app](https://meditrack7.vercel.app/)
-<img width="1282" height="717" alt="image" src="https://github.com/user-attachments/assets/1e323bb0-ffb2-44e5-98f5-3d6e74d818fc" />
+> 💡 Use Trial Mode to explore instantly — no signup required.
+<img width="1278" height="630" alt="image" src="https://github.com/user-attachments/assets/b0f5e404-787b-4b4d-8f6c-b0d82433469f" />
+
 
 ---
 
@@ -42,7 +62,7 @@ A production-ready REST API for managing medications, tracking symptoms, getting
 
 ## Real-World Impact
 
-**Early Stage Launch** — Live for 1 Month
+Early Stage Product — Actively Used & Evolving
 
 - 🧪 10-15 beta testers across US and India
 - 💊 50+ medications tracked and monitored
@@ -51,6 +71,19 @@ A production-ready REST API for managing medications, tracking symptoms, getting
 - 🔒 45+ automated tests ensuring reliability
 
 **What's Next:** Expanding test group to 100+ users to measure medication adherence improvements and healthcare provider adoption.
+
+---
+
+## 🧪 Trial Mode
+
+MediTrack includes a built-in **Trial Mode** so users can explore the app without creating an account.
+
+This allows:
+- Instant access to core features  
+- No authentication friction  
+- Quick testing of UI and workflows  
+
+Perfect for demos, quick evaluations, and first-time users.
 
 ---
 
