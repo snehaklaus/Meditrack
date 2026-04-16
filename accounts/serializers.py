@@ -40,9 +40,9 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'role', 'phone', 'date_of_birth', 'email_digest_enabled']
-        read_only_fields = ['id', 'role']  # Role cannot be changed after creation
-    
+        fields = ['id', 'username', 'email', 'role', 'phone', 'date_of_birth', 'email_digest_enabled', 'preferred_language']  # ⭐ Add preferred_language
+        read_only_fields = ['id', 'role']
+        
     def validate_username(self, value):
         """Ensure username is unique when updating"""
         user = self.instance
